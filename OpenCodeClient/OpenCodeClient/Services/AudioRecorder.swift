@@ -31,7 +31,7 @@ final class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     func start() throws {
         #if os(iOS) || os(visionOS)
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
+        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
         try session.setActive(true, options: [])
         #endif
 
