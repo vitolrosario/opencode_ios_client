@@ -6,6 +6,17 @@
 import SwiftUI
 import MarkdownUI
 
+enum ImageFileUtils {
+    static let extensions: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "heic", "heif", "ico", "svg",
+    ]
+
+    static func isImage(_ path: String) -> Bool {
+        let ext = path.lowercased().split(separator: ".").last.map(String.init) ?? ""
+        return extensions.contains(ext)
+    }
+}
+
 struct FileContentView: View {
     @Bindable var state: AppState
     let filePath: String
@@ -15,11 +26,8 @@ struct FileContentView: View {
     @State private var loadError: String?
     @State private var showPreview = true
 
-    private static let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif", "heic", "heif", "ico"]
-
     private var isImage: Bool {
-        let ext = filePath.lowercased().split(separator: ".").last.map(String.init) ?? ""
-        return Self.imageExtensions.contains(ext)
+        ImageFileUtils.isImage(filePath)
     }
 
     private var isMarkdown: Bool {
@@ -119,19 +127,29 @@ struct FileContentView: View {
             do {
                 let fc = try await state.loadFileContent(path: filePath)
                 await MainActor.run {
-                    if let text = fc.text {
-                        print("[FileContentView] loaded text: len=\(text.count) isMarkdown=\(isMarkdown)")
-                        content = text
-                    } else if let base64 = fc.content, fc.type == "binary" {
-                        if isImage {
-                            if let data = Data(base64Encoded: base64) {
+                    if isImage {
+                        if let rawContent = fc.content {
+                            if let data = Data(base64Encoded: rawContent), UIImage(data: data) != nil {
                                 imageData = data
                             } else {
-                                loadError = "Failed to decode image data"
+                                let cleaned = rawContent
+                                    .replacingOccurrences(of: "\n", with: "")
+                                    .replacingOccurrences(of: "\r", with: "")
+                                    .replacingOccurrences(of: " ", with: "")
+                                if let data = Data(base64Encoded: cleaned), UIImage(data: data) != nil {
+                                    imageData = data
+                                } else {
+                                    loadError = "Failed to decode image"
+                                }
                             }
                         } else {
-                            loadError = "Binary file"
+                            loadError = "No image data"
                         }
+                    } else if let text = fc.text {
+                        print("[FileContentView] loaded text: len=\(text.count) isMarkdown=\(isMarkdown)")
+                        content = text
+                    } else if fc.content != nil, fc.type == "binary" {
+                        loadError = "Binary file"
                     }
                     isLoading = false
                 }
@@ -287,5 +305,3 @@ struct ImageView: View {
         }
     }
 }
-
-
