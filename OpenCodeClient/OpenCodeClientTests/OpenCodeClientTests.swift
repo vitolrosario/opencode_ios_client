@@ -1814,3 +1814,270 @@ struct QuestionSSEEventTests {
         #expect((props["requestID"]?.value as? String) == "question_1")
     }
 }
+
+actor MockAPIClient: APIClientProtocol {
+    var configuredBaseURL: String?
+    var configuredUsername: String?
+    var configuredPassword: String?
+
+    var healthResult = HealthResponse(healthy: true, version: "test-version")
+    var healthError: Error?
+    var sessionsResult: [Session] = []
+    var createSessionResult = Session(
+        id: "created-session",
+        slug: "created-session",
+        projectID: "p1",
+        directory: "/tmp",
+        parentID: nil,
+        title: "Created",
+        version: "1",
+        time: .init(created: 1, updated: 1, archived: nil),
+        share: nil,
+        summary: nil
+    )
+    var messagesResult: [MessageWithParts] = []
+    var promptError: Error?
+    var deletedSessionIDs: [String] = []
+    var updateSessionCalls: [(String, String)] = []
+
+    func setHealthError(_ error: Error?) {
+        healthError = error
+    }
+
+    func setSessionsResult(_ sessions: [Session]) {
+        sessionsResult = sessions
+    }
+
+    func setCreateSessionResult(_ session: Session) {
+        createSessionResult = session
+    }
+
+    func setMessagesResult(_ messages: [MessageWithParts]) {
+        messagesResult = messages
+    }
+
+    func setPromptError(_ error: Error?) {
+        promptError = error
+    }
+
+    func configure(baseURL: String, username: String?, password: String?) {
+        configuredBaseURL = baseURL
+        configuredUsername = username
+        configuredPassword = password
+    }
+
+    func health() async throws -> HealthResponse {
+        if let healthError { throw healthError }
+        return healthResult
+    }
+
+    func projects() async throws -> [Project] { [] }
+    func projectCurrent() async throws -> Project? { nil }
+    func sessions(directory: String?, limit: Int) async throws -> [Session] { sessionsResult }
+    func createSession(title: String?) async throws -> Session { createSessionResult }
+
+    func updateSession(sessionID: String, title: String) async throws -> Session {
+        updateSessionCalls.append((sessionID, title))
+        return Session(
+            id: sessionID,
+            slug: sessionID,
+            projectID: "p1",
+            directory: "/tmp",
+            parentID: nil,
+            title: title,
+            version: "1",
+            time: .init(created: 1, updated: 1, archived: nil),
+            share: nil,
+            summary: nil
+        )
+    }
+
+    func deleteSession(sessionID: String) async throws {
+        deletedSessionIDs.append(sessionID)
+    }
+
+    func messages(sessionID: String, limit: Int?) async throws -> [MessageWithParts] { messagesResult }
+
+    func promptAsync(sessionID: String, text: String, agent: String, model: Message.ModelInfo?) async throws {
+        if let promptError { throw promptError }
+    }
+
+    func abort(sessionID: String) async throws {}
+    func sessionStatus() async throws -> [String: SessionStatus] { [:] }
+    func pendingPermissions() async throws -> [APIClient.PermissionRequest] { [] }
+    func respondPermission(sessionID: String, permissionID: String, response: APIClient.PermissionResponse) async throws {}
+    func pendingQuestions() async throws -> [QuestionRequest] { [] }
+    func replyQuestion(requestID: String, answers: [[String]]) async throws {}
+    func rejectQuestion(requestID: String) async throws {}
+    func providers() async throws -> ProvidersResponse {
+        try JSONDecoder().decode(ProvidersResponse.self, from: Data("{\"providers\":[]}".utf8))
+    }
+    func agents() async throws -> [AgentInfo] { [] }
+    func sessionDiff(sessionID: String) async throws -> [FileDiff] { [] }
+    func sessionTodos(sessionID: String) async throws -> [TodoItem] { [] }
+    func fileList(path: String) async throws -> [FileNode] { [] }
+    func fileContent(path: String) async throws -> FileContent { FileContent(type: "text", content: "") }
+    func findFile(query: String, limit: Int) async throws -> [String] { [] }
+    func fileStatus() async throws -> [FileStatusEntry] { [] }
+}
+
+actor MockSSEClient: SSEClientProtocol {
+    var stream = AsyncThrowingStream<SSEEvent, Error> { continuation in
+        continuation.finish()
+    }
+
+    func connect(baseURL: String, username: String?, password: String?) -> AsyncThrowingStream<SSEEvent, Error> {
+        stream
+    }
+}
+
+struct AppStateFlowTests {
+    @Test @MainActor func testConnectionConfiguresInjectedClient() async {
+        let apiClient = MockAPIClient()
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.configure(serverURL: "example.com:4096", username: "alice", password: "secret")
+
+        await state.testConnection()
+
+        #expect(state.isConnected == true)
+        #expect(state.serverVersion == "test-version")
+        #expect(await apiClient.configuredBaseURL == "https://example.com:4096")
+        #expect(await apiClient.configuredUsername == "alice")
+        #expect(await apiClient.configuredPassword == "secret")
+    }
+
+    @Test @MainActor func testConnectionReportsHealthFailure() async {
+        let apiClient = MockAPIClient()
+        await apiClient.setHealthError(APIError.invalidURL)
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.configure(serverURL: "127.0.0.1:4096")
+
+        await state.testConnection()
+
+        #expect(state.isConnected == false)
+        #expect(state.connectionError?.isEmpty == false)
+    }
+
+    @Test @MainActor func loadSessionsSelectsFirstSessionWhenNeeded() async {
+        let apiClient = MockAPIClient()
+        await apiClient.setSessionsResult([
+            Self.makeSession(id: "s-new", updated: 20),
+            Self.makeSession(id: "s-old", updated: 10),
+        ])
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.isConnected = true
+        state.currentSessionID = nil
+
+        await state.loadSessions()
+
+        #expect(state.sessions.count == 2)
+        #expect(state.currentSessionID == "s-new")
+    }
+
+    @Test @MainActor func createSessionAppendsNewCurrentSession() async {
+        let apiClient = MockAPIClient()
+        await apiClient.setCreateSessionResult(Self.makeSession(id: "created", updated: 30))
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.isConnected = true
+        state.sessions = [Self.makeSession(id: "existing", updated: 10)]
+        state.messages = [Self.makeMessageRow(messageID: "m1", sessionID: "existing", text: "old")]
+        state.partsByMessage = ["m1": Self.makeMessageRow(messageID: "m1", sessionID: "existing", text: "old").parts]
+
+        await state.createSession()
+
+        #expect(state.currentSessionID == "created")
+        #expect(state.sessions.first?.id == "created")
+        #expect(state.messages.isEmpty)
+        #expect(state.partsByMessage.isEmpty)
+    }
+
+    @Test @MainActor func sendMessageRollsBackOptimisticMessageOnFailure() async {
+        let apiClient = MockAPIClient()
+        await apiClient.setPromptError(APIError.invalidURL)
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.currentSessionID = "s1"
+
+        let succeeded = await state.sendMessage("hello")
+
+        #expect(succeeded == false)
+        #expect(state.messages.isEmpty)
+        #expect(state.sendError?.isEmpty == false)
+    }
+
+    @Test @MainActor func loadMessagesStoresFetchedRowsAndParts() async {
+        let apiClient = MockAPIClient()
+        let loaded = [Self.makeMessageRow(messageID: "m1", sessionID: "s1", text: "hi")]
+        await apiClient.setMessagesResult(loaded)
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.currentSessionID = "s1"
+
+        await state.loadMessages()
+
+        #expect(state.messages.count == 1)
+        #expect(state.partsByMessage["m1"]?.count == 1)
+        #expect(state.partsByMessage["m1"]?.first?.text == "hi")
+    }
+
+    @Test @MainActor func deleteCurrentSessionSelectsNextMostRecentSession() async throws {
+        let apiClient = MockAPIClient()
+        await apiClient.setMessagesResult([Self.makeMessageRow(messageID: "m-next", sessionID: "next", text: "next")])
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.sessions = [
+            Self.makeSession(id: "current", updated: 10),
+            Self.makeSession(id: "next", updated: 20),
+        ]
+        state.currentSessionID = "current"
+
+        try await state.deleteSession(sessionID: "current")
+
+        #expect(state.currentSessionID == "next")
+        #expect(state.sessions.count == 1)
+        #expect(state.sessions.first?.id == "next")
+        #expect(await apiClient.deletedSessionIDs == ["current"])
+    }
+
+    private static func makeSession(id: String, updated: Int) -> Session {
+        Session(
+            id: id,
+            slug: id,
+            projectID: "p1",
+            directory: "/tmp",
+            parentID: nil,
+            title: id,
+            version: "1",
+            time: .init(created: 0, updated: updated, archived: nil),
+            share: nil,
+            summary: nil
+        )
+    }
+
+    private static func makeMessageRow(messageID: String, sessionID: String, text: String) -> MessageWithParts {
+        let message = Message(
+            id: messageID,
+            sessionID: sessionID,
+            role: "assistant",
+            parentID: nil,
+            providerID: nil,
+            modelID: nil,
+            model: nil,
+            error: nil,
+            time: .init(created: 0, completed: 1),
+            finish: "stop",
+            tokens: nil,
+            cost: nil
+        )
+        let part = Part(
+            id: "p-\(messageID)",
+            messageID: messageID,
+            sessionID: sessionID,
+            type: "text",
+            text: text,
+            tool: nil,
+            callID: nil,
+            state: nil,
+            metadata: nil,
+            files: nil
+        )
+        return MessageWithParts(info: message, parts: [part])
+    }
+}

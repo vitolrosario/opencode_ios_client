@@ -136,3 +136,9 @@ actor SSEClient {
         }
     }
 }
+
+protocol SSEClientProtocol: Actor {
+    func connect(baseURL: String, username: String?, password: String?) -> AsyncThrowingStream<SSEEvent, Error>
+}
+
+extension SSEClient: SSEClientProtocol {}

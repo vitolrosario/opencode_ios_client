@@ -170,7 +170,14 @@ final class AppState {
     private static let selectedProjectWorktreeKey = "selectedProjectWorktree"
     private static let customProjectPathKey = "customProjectPath"
 
-    init() {
+    init(
+        apiClient: APIClientProtocol = APIClient(),
+        sseClient: SSEClientProtocol = SSEClient(),
+        sshTunnelManager: SSHTunnelManager? = nil
+    ) {
+        self.apiClient = apiClient
+        self.sseClient = sseClient
+        self.sshTunnelManager = sshTunnelManager ?? SSHTunnelManager()
         if let storedServer = UserDefaults.standard.string(forKey: Self.serverURLKey) {
             if storedServer == APIConstants.legacyDefaultServer {
                 _serverURL = APIClient.defaultServer
@@ -515,9 +522,9 @@ final class AppState {
     var providerModelsIndex: [String: ProviderModel] = [:]
     var providerConfigError: String? = nil
 
-    private let apiClient = APIClient()
-    private let sseClient = SSEClient()
-    let sshTunnelManager = SSHTunnelManager()
+    private let apiClient: APIClientProtocol
+    private let sseClient: SSEClientProtocol
+    let sshTunnelManager: SSHTunnelManager
     private var sseTask: Task<Void, Never>?
 
     /// Guard against race conditions when rapidly switching sessions.
@@ -525,7 +532,7 @@ final class AppState {
     private var sessionLoadingID = UUID()
 
     // WAN optimization: page message history in fixed-size message batches.
-    private static let messagePageSize = APIConstants.messagePageSize
+    nonisolated private static let messagePageSize = 20
     private var loadedMessageLimitBySessionID: [String: Int] = [:]
     private var hasMoreHistoryBySessionID: [String: Bool] = [:]
     private var loadingOlderMessagesSessionIDs: Set<String> = []
@@ -561,7 +568,7 @@ final class AppState {
 
     nonisolated static func normalizedMessageFetchLimit(
         current: Int?,
-        pageSize: Int = APIConstants.messagePageSize
+        pageSize: Int = 20
     ) -> Int {
         let fallback = max(pageSize, 1)
         guard let current else { return fallback }
@@ -570,7 +577,7 @@ final class AppState {
 
     nonisolated static func nextMessageFetchLimit(
         current: Int?,
-        pageSize: Int = APIConstants.messagePageSize
+        pageSize: Int = 20
     ) -> Int {
         normalizedMessageFetchLimit(current: current, pageSize: pageSize) + max(pageSize, 1)
     }
@@ -825,7 +832,7 @@ final class AppState {
         sessionLoadingID = loadingID
         
         do {
-            let session = try await apiClient.createSession()
+            let session = try await apiClient.createSession(title: nil)
             guard sessionLoadingID == loadingID else { return }
             
             Self.logger.debug("createSession: created id=\(session.id, privacy: .public) directory=\(session.directory, privacy: .public) effectiveProjectDir=\(self.effectiveProjectDirectory ?? "nil", privacy: .public)")
@@ -1040,7 +1047,7 @@ final class AppState {
     func searchFiles(query: String) async {
         guard !query.isEmpty else { fileSearchResults = []; return }
         do {
-            fileSearchResults = try await apiClient.findFile(query: query)
+            fileSearchResults = try await apiClient.findFile(query: query, limit: 50)
         } catch {
             fileSearchResults = []
         }
@@ -1772,9 +1779,9 @@ final class AppState {
     func refresh() async {
         await testConnection()
         if isConnected {
-            async let agentsResult = loadAgents()
-            async let providersResult = loadProvidersConfig()
-            async let projectsResult = loadProjects()
+            async let agentsResult: Void = loadAgents()
+            async let providersResult: Void = loadProvidersConfig()
+            async let projectsResult: Void = loadProjects()
             await loadSessions()
             _ = await agentsResult
             _ = await providersResult
