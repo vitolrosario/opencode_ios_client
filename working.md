@@ -3,6 +3,8 @@
 ## 2026-03-13
 
 - 回滚了上一版 root-only session 列表交互：iPhone 和 iPad 的 session 列表重新按完整树状层级展示 child/subagent sessions，避免 stop 等会话上下文在列表里“消失”。
+- 完成了 session list 回归保护的第一轮 P0 / P1：单元测试现在会锁住 `sessionTree` 和 `sidebarSessions` 的职责边界，UI smoke test 也会直接检查 child session 仍然可见。
+- 将测试计划文档重写并收敛为 `docs/tests.md`，改成介绍当前测试体系、已完成的 behavior guards，以及后续值得继续补的 future work。
 
 ## 2026-03-12
 

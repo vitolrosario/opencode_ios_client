@@ -45,6 +45,7 @@ struct ChatToolbarView: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundColor(.accentColor)
             }
+            .accessibilityIdentifier("chat-toolbar-session-list")
             
             Button {
                 renameText = state.currentSession?.title ?? ""
@@ -65,6 +66,7 @@ struct ChatToolbarView: View {
                     .foregroundColor(state.canCreateSession ? .accentColor : .gray)
             }
             .disabled(!state.canCreateSession)
+            .accessibilityIdentifier("chat-toolbar-create-session")
 
             if !state.canCreateSession {
                 Button {
