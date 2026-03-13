@@ -9,9 +9,53 @@ import UIKit
 #endif
 
 struct ContentView: View {
-    @State private var state = AppState()
+    @State private var state: AppState
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var showSettingsSheet = false
+
+    init() {
+        _state = State(initialValue: Self.makeInitialState())
+    }
+
+    private static var hasUITestSessionTreeFixture: Bool {
+        ProcessInfo.processInfo.arguments.contains("UITEST_SESSION_TREE_FIXTURE")
+    }
+
+    private static func makeInitialState() -> AppState {
+        let state = AppState()
+        guard hasUITestSessionTreeFixture else { return state }
+
+        state.isConnected = true
+        state.sessions = [
+            Session(
+                id: "root-session",
+                slug: "root-session",
+                projectID: "p1",
+                directory: "/tmp",
+                parentID: nil,
+                title: "Root Session",
+                version: "1",
+                time: .init(created: 0, updated: 2_000, archived: nil),
+                share: nil,
+                summary: nil
+            ),
+            Session(
+                id: "child-session",
+                slug: "child-session",
+                projectID: "p1",
+                directory: "/tmp",
+                parentID: "root-session",
+                title: "Child Session",
+                version: "1",
+                time: .init(created: 0, updated: 1_500, archived: nil),
+                share: nil,
+                summary: nil
+            ),
+        ]
+        state.currentSessionID = "root-session"
+        state.expandedSessionIDs = ["root-session"]
+        return state
+    }
 
     /// iPad / Vision Pro：左右分栏，无 Tab Bar
     private var useSplitLayout: Bool { sizeClass == .regular }
@@ -50,6 +94,10 @@ struct ContentView: View {
     }
 
     private func restoreConnectionFlow() async {
+        if Self.hasUITestSessionTreeFixture {
+            return
+        }
+
         if state.sshTunnelManager.config.isEnabled,
            state.sshTunnelManager.status != .connected {
             await state.sshTunnelManager.connect()

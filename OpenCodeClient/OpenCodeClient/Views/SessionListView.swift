@@ -43,6 +43,7 @@ struct SessionListView: View {
                                 .id("load-more-\(lastSessionID)")
                         }
                     }
+                    .accessibilityIdentifier("session-list")
                     .refreshable {
                         await state.refreshSessions()
                     }
@@ -198,6 +199,7 @@ struct SessionRowView: View {
                 }
                 .buttonStyle(.plain)
                 .frame(width: 12)
+                .accessibilityIdentifier("session-toggle-\(session.id)")
             } else {
                 Color.clear
                     .frame(width: 12)
@@ -239,6 +241,8 @@ struct SessionRowView: View {
             onSelect()
         }
         .listRowBackground(isSelected ? Color.blue.opacity(0.08) : Color.clear)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("session-row-\(session.id)")
     }
 
     private func formattedDate(_ timestamp: Int) -> String {
