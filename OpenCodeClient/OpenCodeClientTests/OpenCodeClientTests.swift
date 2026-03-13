@@ -1654,6 +1654,41 @@ struct SessionTreeTests {
         #expect(state.sidebarSessions.map(\.id) == ["root-new", "root-old"])
     }
 
+    @Test @MainActor func sessionTreeRemainsCanonicalListWhenSidebarSessionsHideChildren() {
+        let state = AppState()
+        state.showArchivedSessions = false
+        state.sessions = [
+            makeSession(id: "root", updated: 100),
+            makeSession(id: "child", parentID: "root", updated: 90),
+            makeSession(id: "grandchild", parentID: "child", updated: 80),
+            makeSession(id: "other-root", updated: 70),
+        ]
+
+        #expect(state.sidebarSessions.map(\.id) == ["root", "other-root"])
+        #expect(state.sessionTree.count == 2)
+        #expect(state.sessionTree[0].session.id == "root")
+        #expect(state.sessionTree[0].children.count == 1)
+        #expect(state.sessionTree[0].children[0].session.id == "child")
+        #expect(state.sessionTree[0].children[0].children.count == 1)
+        #expect(state.sessionTree[0].children[0].children[0].session.id == "grandchild")
+    }
+
+    @Test @MainActor func archivedFilteringMatchesBetweenSidebarSessionsAndSessionTree() {
+        let state = AppState()
+        state.showArchivedSessions = false
+        state.sessions = [
+            makeSession(id: "active-root", updated: 100),
+            makeSession(id: "active-child", parentID: "active-root", updated: 90),
+            makeSession(id: "archived-root", updated: 80, archived: 1_000),
+            makeSession(id: "archived-child", parentID: "active-root", updated: 70, archived: 2_000),
+        ]
+
+        #expect(state.sidebarSessions.map(\.id) == ["active-root"])
+        #expect(state.sessionTree.count == 1)
+        #expect(state.sessionTree[0].session.id == "active-root")
+        #expect(state.sessionTree[0].children.map(\.session.id) == ["active-child"])
+    }
+
     @Test @MainActor func toggleSessionExpandedAddsAndRemovesSessionID() {
         let state = AppState()
         #expect(state.expandedSessionIDs.isEmpty)
@@ -2036,6 +2071,48 @@ struct AppStateFlowTests {
         #expect(await apiClient.sessionLimitRequests == [100, 200])
         #expect(state.sidebarSessions.map(\.id) == ["root-2", "root-1"])
         #expect(state.canLoadMoreSessions == false)
+    }
+
+    @Test @MainActor func loadMoreSessionsPreservesChildHierarchyInCanonicalSessionTree() async {
+        let apiClient = MockAPIClient()
+        let fillerChildren = (0..<97).map { index in
+            Self.makeSession(
+                id: "child-extra-\(index)",
+                parentID: "root-1",
+                updated: 89 - index
+            )
+        }
+        await apiClient.setSessionsResult([
+            Self.makeSession(id: "root-1", updated: 100),
+            Self.makeSession(id: "child-1", parentID: "root-1", updated: 95),
+            Self.makeSession(id: "grandchild-1", parentID: "child-1", updated: 90),
+        ] + fillerChildren, forLimit: 100)
+        await apiClient.setSessionsResult([
+            Self.makeSession(id: "root-2", updated: 110),
+            Self.makeSession(id: "root-1", updated: 100),
+            Self.makeSession(id: "child-1", parentID: "root-1", updated: 95),
+            Self.makeSession(id: "grandchild-1", parentID: "child-1", updated: 90),
+        ] + fillerChildren, forLimit: 200)
+
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.isConnected = true
+        state.showArchivedSessions = false
+
+        await state.loadSessions()
+        #expect(state.sessionTree.map(\.session.id) == ["root-1"])
+        #expect(state.sessionTree[0].children.first?.session.id == "child-1")
+        let initialChildOneNode = state.sessionTree[0].children.first(where: { $0.session.id == "child-1" })
+        #expect(initialChildOneNode?.children.map(\.session.id) == ["grandchild-1"])
+        #expect(state.canLoadMoreSessions == true)
+
+        await state.loadMoreSessions()
+
+        #expect(state.sidebarSessions.map(\.id) == ["root-2", "root-1"])
+        #expect(state.sessionTree.map(\.session.id) == ["root-2", "root-1"])
+        let rootOneNode = state.sessionTree.first(where: { $0.session.id == "root-1" })
+        #expect(rootOneNode?.children.first?.session.id == "child-1")
+        let reloadedChildOneNode = rootOneNode?.children.first(where: { $0.session.id == "child-1" })
+        #expect(reloadedChildOneNode?.children.map(\.session.id) == ["grandchild-1"])
     }
 
     @Test @MainActor func createSessionAppendsNewCurrentSession() async {
