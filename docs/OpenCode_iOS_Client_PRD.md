@@ -247,6 +247,16 @@ OpenCode 绝大多数情况下不会请求 permission，若出现 `permission.as
 
 视觉与交互：列表文本默认使用中性色（灰）以避免 iOS 默认的“链接蓝”。当前活跃 Session 使用轻量背景色高亮，并在右侧显示选中标记。
 
+#### 4.2.6 Fork Session（会话分叉）
+
+用户可以从任意消息处 fork 当前对话，创建一个新 session，包含该消息之前的全部历史。典型场景：AI 回复不满意，想从某个节点重新开始；或者想从同一个起点尝试不同的提问方向。
+
+**交互方式**：每条用户消息底部的模型标签（如 `anthropic/claude-opus-4-6`）旁边显示一个 "..." 按钮。点击后弹出菜单，包含 "Fork from here" 选项。点击后调用 `POST /session/{id}/fork`，服务端创建新 session 并复制指定消息之前的全部消息历史，客户端自动切换到新创建的 session。
+
+**API**：`POST /session/{sessionID}/fork`，body 为 `{ "messageID": "..." }`（可选）。返回新的 `Session` 对象。
+
+**实现说明**：使用 SwiftUI `Menu`（tap 触发）而非 `.contextMenu`（需长按），确保可发现性。Fork 后的 session 标题自动变为 "{原标题} (fork #N)"。
+
 ### 4.3 Files Tab（文件浏览与 Diff）
 
 #### 4.3.1 文件树

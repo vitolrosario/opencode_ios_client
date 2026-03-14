@@ -387,6 +387,16 @@ var customProjectPath: String = ""        // "Custom path" 时用户输入的路
 - **Abort**：提供按钮调用 `POST /session/:id/abort`
 - **历史加载交互**：Chat 顶部显示“下拉加载更多历史消息”提示；加载中显示“正在加载更多历史消息...”，支持中英文本地化
 
+#### 6.1 Fork Session（会话分叉）
+
+用户消息底部 model label 旁的 "..." 菜单提供 "Fork from here" 选项。调用 `POST /session/{id}/fork`（body: `{ "messageID": "..." }`），服务端复制指定消息之前的全部历史到新 session 并返回。客户端收到新 `Session` 后插入列表顶部并切换。
+
+**实现要点**：
+- 使用 SwiftUI `Menu`（tap 触发，非 `.contextMenu` 长按），确保按钮可发现性
+- `MessageRowView` 新增 `onForkFromMessage: ((String) -> Void)?` 回调，将 `message.info.id` 传递给 `AppState.forkSession(messageID:)`
+- `AppState.forkSession()` 遵循 `createSession()` 模式：guard `isConnected` + `currentSessionID`，调 API，insert session，switch，load messages
+- Fork 后的 session 标题由服务端生成："{原标题} (fork #N)"
+
 ### 7. 文件与 Diff
 
 - **文件树**：`GET /file?path=` 递归展示；`GET /file/status` 获取 git 状态做颜色标记
