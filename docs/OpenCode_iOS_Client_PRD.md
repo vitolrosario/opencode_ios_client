@@ -138,14 +138,13 @@ iPhone 采用底部 Tab Bar，三个 Tab：
 |----------|------------|---------|
 | GLM-5 | `zai-coding-plan` | `glm-5` |
 | Opus 4.6 | `anthropic` | `claude-opus-4-6` |
+| Sonnet 4.6 | `anthropic` | `claude-sonnet-4-6` |
 | GPT-5.4 | `openai` | `gpt-5.4` |
 | GPT-5.3 Codex | `openai` | `gpt-5.3-codex` |
-| Gemini 3.1 Pro | `google` | `gemini-3.1-pro-preview` |
-| Gemini 3 Flash | `google` | `gemini-3-flash-preview` |
 
 **Agent 选择器**：下拉列表，内容从 `GET /agent` API 动态获取。过滤 `hidden != true` 的 agents 后显示。每个选项显示 agent 名称（如 `Sisyphus`），description 可作为 tooltip 或 subtitle。
 
-**iPhone 显示策略**：iPhone 上使用短名（`Opus` / `GPT` / `Gemini` / `GLM`）以适配窄宽；iPad 上显示全称。
+**iPhone 显示策略**：iPhone 上使用短名（`Opus` / `Sonnet` / `GPT` / `GLM`）以适配窄宽；iPad 上显示全称。
 
 **技术实现**：
 - 切换模型/Agent 不需要调用 API，只是改变本地状态
@@ -236,7 +235,7 @@ OpenCode 绝大多数情况下不会请求 permission，若出现 `permission.as
 
 额外操作（通过 Chat 顶部 toolbar 按钮，从左到右依次为）：
 - Session 列表、重命名、Compact、新建 Session（按此顺序排列）
-- Compact Session（调用 `POST /session/:id/summarize`，压缩历史以降低 token 超限风险）
+- Compact Session（调用 `POST /session/:id/summarize`，压缩历史以降低 token 超限风险）（🔲 暂未实现）
 - 中止当前运行（调用 `POST /session/:id/abort`）
 
 #### 4.2.5 Session 管理
@@ -359,7 +358,7 @@ iOS App → 公网 VPS (SSH) → VPS:18080 → 家里 OpenCode (127.0.0.1:4096)
 
 #### 4.4.3 Model Presets
 
-**当前实现**：固定预设列表（GLM-5、Opus 4.6、GPT-5.4、GPT-5.3 Codex、Gemini 3.1 Pro、Gemini 3 Flash），无导入、无排序。发送消息时在 body 中携带 `model: { providerID, modelID }`。
+**当前实现**：固定预设列表（GLM-5、Opus 4.6、Sonnet 4.6、GPT-5.4、GPT-5.3 Codex），无导入、无排序。发送消息时在 body 中携带 `model: { providerID, modelID }`。
 
 #### 4.4.3 Project (Workspace)
 
@@ -471,8 +470,7 @@ App 进入前台
 | GET | `/session/:id` | Session 详情 |
 | DELETE | `/session/:id` | 删除 Session |
 | GET | `/session/:id/message` | 消息列表（支持 `limit`，默认先拉最近 6 条） |
-| POST | `/session/:id/message` | 发送消息 |
-| POST | `/session/:id/prompt_async` | 异步发送消息 |
+| POST | `/session/:id/prompt_async` | 发送消息（异步） |
 | POST | `/session/:id/abort` | 中止运行 |
 | GET | `/session/:id/diff` | Session diff |
 | GET | `/session/status` | 所有 Session 状态 |
@@ -493,7 +491,7 @@ App 进入前台
 
 | 方法 | 路径 | 用途 |
 |------|------|------|
-| POST | `/session/:id/summarize` | Compact session（已实现） |
+| POST | `/session/:id/summarize` | Compact session（🔲 暂未实现） |
 | POST | `/session/:id/fork` | Fork session |
 | GET | `/session/:id/todo` | 查看 AI 的 todo 列表 |
 | GET | `/find?pattern=...` | 全文搜索 |
@@ -509,7 +507,7 @@ App 进入前台
 ┌─────────────────────────────────┐
 │ ☰ Sessions    Session Title   ⋯ │  ← Navigation bar
 ├─────────────────────────────────┤
-│ [Claude Opus] [Gemini 2.5] [G..│  ← 模型切换条（横向滚动）
+│ [Claude Opus] [Sonnet 4.6] [G..│  ← 模型切换条（横向滚动）
 ├─────────────────────────────────┤
 │                                 │
 │  ┌───────────────────────────┐  │
