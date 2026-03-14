@@ -1,5 +1,9 @@
 # 工作记录 - OpenCode iOS 客户端
 
+## 2026-03-14
+
+- 从模型预设列表中移除 Gemini 3.1 Pro 和 Gemini 3 Flash 两个模型。
+
 ## 2026-03-13
 
 - 回滚了上一版 root-only session 列表交互：iPhone 和 iPad 的 session 列表重新按完整树状层级展示 child/subagent sessions，避免 stop 等会话上下文在列表里“消失”。
