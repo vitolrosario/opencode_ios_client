@@ -242,6 +242,8 @@ OpenCode 绝大多数情况下不会请求 permission，若出现 `permission.as
 
 从 Chat Tab 顶部左侧的按钮进入 Session 列表（slide-over 或 navigation push）。**列出 workspace 下所有已有 Session**，是重要的功能验证手段：可验证连接是否正确、API 解析是否正常、消息/状态能否正确展示。
 
+在 iPhone 上，除顶部 `Session 列表` 按钮外，还支持从屏幕左边缘向右滑入的手势来打开同一个 Session List。这个手势的目标不是提供新的导航分支，而是复用现有列表入口，降低单手操作时点按左上角按钮的成本。
+
 列表显示所有 Session，按时间倒序。每个条目显示：标题、更新时间、`summary.files`（该 session diff 涉及文件数）和状态（idle/busy/retry）。支持新建 Session、切换 Session，也支持删除 Session。
 
 视觉与交互：列表文本默认使用中性色（灰）以避免 iOS 默认的“链接蓝”。当前活跃 Session 使用轻量背景色高亮，并在右侧显示选中标记。

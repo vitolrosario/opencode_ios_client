@@ -4,16 +4,21 @@
 
 ## 当前状态
 
-- **最后更新**：2026-03-14
-- **Phase**：Phase 3 完成 + Realtime Speech WebSocket（space.ai-builders.com/backend 语音转写已打通）
+- **最后更新**：2026-03-19
+- **Phase**：Phase 3 完成 + iPhone 左缘右滑打开 Session List
 - **编译**：✅ 通过（iphonesimulator / generic destination）
-- **测试**：✅ 所有测试通过
+- **测试**：⚠️ 新增手势逻辑单元测试通过；`xcodebuild test` 下现有 session list UI smoke 在当前 simulator 环境未稳定通过
 
 ## 进行中
 
 （无）
 
 ## 已完成（近期）
+
+- [x] **iPhone 左缘右滑打开 Session List（2026-03-19）**：
+  - [x] 实现：`ChatTabView` 左侧新增窄透明 edge target，仅 compact width 启用；从左边缘向右拖拽满足阈值时走与 toolbar 相同的 `showSessionList = true`
+  - [x] 约束：要求起点贴左边缘、横向位移足够、纵向漂移有限，避免把普通纵向滚动误判成打开 session list
+  - [x] 测试：新增 `SessionListEdgeSwipeBehaviorTests`，覆盖合法左缘右滑、非左缘起手、以及过度纵向拖拽三种情况
 
 - [x] **Model selection 切换 session 后显示错误模型修复（2026-03-14）**：
   - [x] 根因：`inferAndStoreModelForCurrentSessionIfMissing()` 有 `guard selectedModelIDBySessionID[sessionID] == nil` 前置条件，当 persistence 有旧值时直接跳过推断，导致 `selectedModelIndex` 保留上一个 session 的值
