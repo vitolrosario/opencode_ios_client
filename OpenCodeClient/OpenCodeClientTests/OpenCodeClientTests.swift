@@ -1025,6 +1025,36 @@ struct ChatScrollBehaviorTests {
     }
 }
 
+struct SessionListEdgeSwipeBehaviorTests {
+
+    @Test func opensForLeftEdgeSwipeWithStrongHorizontalTravel() {
+        #expect(
+            SessionListEdgeSwipeBehavior.shouldOpenSessionList(
+                startLocation: CGPoint(x: 12, y: 180),
+                translation: CGSize(width: 120, height: 18)
+            ) == true
+        )
+    }
+
+    @Test func ignoresSwipeThatStartsAwayFromLeftEdge() {
+        #expect(
+            SessionListEdgeSwipeBehavior.shouldOpenSessionList(
+                startLocation: CGPoint(x: 60, y: 180),
+                translation: CGSize(width: 120, height: 12)
+            ) == false
+        )
+    }
+
+    @Test func ignoresMostlyVerticalDrag() {
+        #expect(
+            SessionListEdgeSwipeBehavior.shouldOpenSessionList(
+                startLocation: CGPoint(x: 8, y: 180),
+                translation: CGSize(width: 110, height: 90)
+            ) == false
+        )
+    }
+}
+
 // MARK: - SSH Tunnel Tests
 
 struct SSHTunnelTests {

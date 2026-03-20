@@ -40,6 +40,18 @@ enum ChatScrollBehavior {
     }
 }
 
+enum SessionListEdgeSwipeBehavior {
+    static let edgeThreshold: CGFloat = 32
+    static let minimumHorizontalTranslation: CGFloat = 72
+    static let maximumVerticalTranslation: CGFloat = 56
+
+    static func shouldOpenSessionList(startLocation: CGPoint, translation: CGSize) -> Bool {
+        guard startLocation.x <= edgeThreshold else { return false }
+        guard translation.width >= minimumHorizontalTranslation else { return false }
+        return abs(translation.height) <= maximumVerticalTranslation
+    }
+}
+
 private struct BottomMarkerMinYPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = .greatestFiniteMagnitude
 
@@ -448,6 +460,15 @@ struct ChatTabView: View {
                             pendingBottomVisibilityTask?.cancel()
                             pendingBottomVisibilityTask = nil
                         }
+                        .overlay(alignment: .leading) {
+                            if sizeClass != .regular {
+                                Color.clear
+                                    .frame(width: SessionListEdgeSwipeBehavior.edgeThreshold)
+                                    .contentShape(Rectangle())
+                                    .gesture(sessionListEdgeSwipeGesture)
+                                    .accessibilityHidden(true)
+                            }
+                        }
                     }
                 }
 
@@ -762,6 +783,19 @@ struct ChatTabView: View {
 
     private func openFilesTab() {
         state.selectedTab = 1
+    }
+
+    private var sessionListEdgeSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 20, coordinateSpace: .local)
+            .onEnded { value in
+                guard sizeClass != .regular else { return }
+                guard !showSessionList else { return }
+                guard SessionListEdgeSwipeBehavior.shouldOpenSessionList(
+                    startLocation: value.startLocation,
+                    translation: value.translation
+                ) else { return }
+                showSessionList = true
+            }
     }
 }
 
