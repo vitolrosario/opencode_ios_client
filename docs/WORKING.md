@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-- **最后更新**：2026-03-19
+- **最后更新**：2026-03-20
 - **Phase**：Phase 3 完成 + iPhone 左缘右滑打开 Session List
 - **编译**：✅ 通过（iphonesimulator / generic destination）
 - **测试**：⚠️ 新增手势逻辑单元测试通过；`xcodebuild test` 下现有 session list UI smoke 在当前 simulator 环境未稳定通过
@@ -14,6 +14,18 @@
 （无）
 
 ## 已完成（近期）
+
+- [x] **GLM-5 预设切换到 GLM-5-Turbo（2026-03-20）**：
+  - [x] 将模型预设显示名从 `GLM-5` 更新为 `GLM-5-Turbo`
+  - [x] 将底层 model ID 从 `glm-5` 更新为 `glm-5-turbo`
+
+- [x] **默认模型切换到 GPT-5.4（2026-03-19）**：
+  - [x] 默认发送模型从 `zai-coding-plan/glm-5` 切换为 `openai/gpt-5.4`
+  - [x] 新会话和未保存过模型选择的默认发送路径直接落到 GPT-5.4
+
+- [x] **oh-my-opencode 默认 agent 与 Gemini model ID 修正（2026-03-17）**：
+  - [x] 全局 `oh-my-opencode.json` 默认 agent 从 GLM-5 切换为 sisyphus ultraworker（Claude Opus 4.6）
+  - [x] Gemini model ID 修正：`google/gemini-3-flash` -> `google/gemini-3-flash-preview`，`google/gemini-3-pro` -> `google/gemini-3.1-pro-preview`
 
 - [x] **iPhone 左缘右滑打开 Session List（2026-03-19）**：
   - [x] 实现：`ChatTabView` 左侧新增窄透明 edge target，仅 compact width 启用；从左边缘向右拖拽满足阈值时走与 toolbar 相同的 `showSessionList = true`
