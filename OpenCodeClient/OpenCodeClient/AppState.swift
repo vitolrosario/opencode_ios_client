@@ -415,7 +415,7 @@ final class AppState {
     var streamingReasoningPart: Part? { get { messageStore.streamingReasoningPart } set { messageStore.streamingReasoningPart = newValue } }
 
     var modelPresets: [ModelPreset] = [
-        ModelPreset(displayName: "GLM-5-Turbo", providerID: "zai-coding-plan", modelID: "glm-5-turbo"),
+        ModelPreset(displayName: "GLM-5.1", providerID: "zai-coding-plan", modelID: "glm-5.1"),
         ModelPreset(displayName: "Opus 4.6", providerID: "anthropic", modelID: "claude-opus-4-6"),
         ModelPreset(displayName: "Sonnet 4.6", providerID: "anthropic", modelID: "claude-sonnet-4-6"),
         ModelPreset(displayName: "GPT-5.4", providerID: "openai", modelID: "gpt-5.4"),
