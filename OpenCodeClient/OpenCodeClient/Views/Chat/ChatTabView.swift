@@ -77,6 +77,7 @@ struct ChatTabView: View {
     var showSettingsInToolbar: Bool = false
     var onSettingsTap: (() -> Void)?
     @State private var inputText = ""
+    @State private var hasMarkedText = false
     @State private var isSending = false
     @State private var isSyncingDraft = false
     @State private var showSessionList = false
@@ -476,21 +477,30 @@ struct ChatTabView: View {
 
                  Divider()
                  HStack(alignment: .bottom, spacing: 10) {
-                    TextField(L10n.t(.chatInputPlaceholder), text: $inputText, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .lineLimit(3...8)
-                        .submitLabel(.send)
-                        .onSubmit {
-                            sendCurrentInput()
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color(.systemGray4), lineWidth: 0.5)
+                    ZStack(alignment: .topLeading) {
+                        ChatComposerTextView(
+                            text: $inputText,
+                            hasMarkedText: $hasMarkedText,
+                            placeholder: L10n.t(.chatInputPlaceholder),
+                            onSubmit: sendCurrentInput
                         )
+                        .frame(minHeight: 44, maxHeight: 144)
+
+                        if inputText.isEmpty {
+                            Text(L10n.t(.chatInputPlaceholder))
+                                .foregroundStyle(.secondary)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color(.systemGray4), lineWidth: 0.5)
+                    )
 
                     VStack(spacing: 8) {
                         Button {
@@ -521,8 +531,7 @@ struct ChatTabView: View {
                                     .foregroundColor(.accentColor)
                             }
                         }
-                        .keyboardShortcut(.return, modifiers: [])
-                        .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending || isRecording || isTranscribing)
+                        .disabled(!ChatComposerSendGate.canSend(text: inputText, isSending: isSending, hasMarkedText: hasMarkedText) || isRecording || isTranscribing)
 
                         if state.isBusy {
                             Button {
@@ -627,11 +636,11 @@ struct ChatTabView: View {
     }
 
     private func sendCurrentInput() {
-        guard !isSending else { return }
+        guard ChatComposerSendGate.canSend(text: inputText, isSending: isSending, hasMarkedText: hasMarkedText) else { return }
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
 
         inputText = ""
+        hasMarkedText = false
         isSending = true
         Task {
             let success = await state.sendMessage(text)

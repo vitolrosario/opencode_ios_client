@@ -16,6 +16,12 @@ No Apple Developer account needed. Just tap the link on your iOS device.
 - **Files**: file tree browser, session diffs, markdown preview, image preview with zoom/pan, code view with line numbers
 - **Settings**: server connection, Basic Auth, SSH tunnel, theme, voice transcription
 
+### Hardware keyboard behavior on iPad
+
+- `Enter`: send the current message when text input is not in IME composition
+- `Shift+Enter`: insert a newline
+- Chinese/Japanese IME composition is allowed to commit marked text before any send action fires
+
 ## Requirements
 
 - iOS 17.0+

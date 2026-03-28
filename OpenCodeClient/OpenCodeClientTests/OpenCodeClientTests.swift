@@ -949,6 +949,35 @@ struct AIBuildersAudioClientTests {
     @Test func mergedSpeechInputKeepsSeparatorForExistingInput() {
         #expect(ChatTabView.mergedSpeechInput(prefix: "Existing draft", transcript: "partial") == "Existing draft partial")
     }
+
+    @Test func chatComposerReturnUsesSystemDuringMarkedTextComposition() {
+        #expect(ChatComposerKeyAction.action(for: "\n", hasMarkedText: true, isShiftReturn: false) == .system)
+    }
+
+    @Test func chatComposerPlainReturnSubmitsWhenNoMarkedText() {
+        #expect(ChatComposerKeyAction.action(for: "\n", hasMarkedText: false, isShiftReturn: false) == .submit)
+    }
+
+    @Test func chatComposerShiftReturnInsertsNewlineWhenNoMarkedText() {
+        #expect(ChatComposerKeyAction.action(for: "\n", hasMarkedText: false, isShiftReturn: true) == .insertNewline)
+    }
+
+    @Test func chatComposerNonReturnLeavesSystemHandling() {
+        #expect(ChatComposerKeyAction.action(for: "x", hasMarkedText: false, isShiftReturn: false) == .system)
+    }
+
+    @Test func chatComposerSendGateRejectsMarkedText() {
+        #expect(ChatComposerSendGate.canSend(text: "nihao", isSending: false, hasMarkedText: true) == false)
+    }
+
+    @Test func chatComposerSendGateRejectsWhitespaceAndActiveSend() {
+        #expect(ChatComposerSendGate.canSend(text: "   ", isSending: false, hasMarkedText: false) == false)
+        #expect(ChatComposerSendGate.canSend(text: "hello", isSending: true, hasMarkedText: false) == false)
+    }
+
+    @Test func chatComposerSendGateAllowsCommittedText() {
+        #expect(ChatComposerSendGate.canSend(text: "hello", isSending: false, hasMarkedText: false) == true)
+    }
 }
 
 // MARK: - APIConstants Tests
