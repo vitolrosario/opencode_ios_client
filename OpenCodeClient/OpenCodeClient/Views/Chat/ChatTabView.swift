@@ -484,7 +484,7 @@ struct ChatTabView: View {
                             placeholder: L10n.t(.chatInputPlaceholder),
                             onSubmit: sendCurrentInput
                         )
-                        .frame(minHeight: 32, maxHeight: 144)
+                        .frame(minHeight: 32, maxHeight: 100)
 
                         if inputText.isEmpty {
                             Text(L10n.t(.chatInputPlaceholder))
