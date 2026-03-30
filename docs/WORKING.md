@@ -15,6 +15,11 @@
 
 ## 已完成（近期）
 
+- [x] **GLM-5.1 预设切回 GLM-5-turbo（2026-03-30）**：
+  - [x] 将模型预设显示名从 `GLM-5.1` 更新为 `GLM-5-turbo`
+  - [x] 将底层 model ID 从 `glm-5.1` 更新为 `glm-5-turbo`
+  - [x] 为已保存旧 `glm-5.1` 选择的 session 增加兼容映射，避免 selector 回退到其他模型
+
 - [x] **Chat Composer 视觉紧凑化与 Return 键行为调整（2026-03-28）**：
   - [x] 视觉：将 composer 最小高度从 44pt 继续压至 32pt，并将输入框容器/底部栏的垂直 padding 收紧到 5pt/6pt，使输入区高度更接近右侧圆形按钮，不再浪费底部空间
   - [x] 行为：修改 `ChatComposerTextView` 使 Return 键（含外接键盘 Enter）始终插入换行而非发送，并将键盘 Return 键类型从 `.send` 改回 `.default`

@@ -415,7 +415,7 @@ final class AppState {
     var streamingReasoningPart: Part? { get { messageStore.streamingReasoningPart } set { messageStore.streamingReasoningPart = newValue } }
 
     var modelPresets: [ModelPreset] = [
-        ModelPreset(displayName: "GLM-5.1", providerID: "zai-coding-plan", modelID: "glm-5.1"),
+        ModelPreset(displayName: "GLM-5-turbo", providerID: "zai-coding-plan", modelID: "glm-5-turbo"),
         ModelPreset(displayName: "Opus 4.6", providerID: "anthropic", modelID: "claude-opus-4-6"),
         ModelPreset(displayName: "Sonnet 4.6", providerID: "anthropic", modelID: "claude-sonnet-4-6"),
         ModelPreset(displayName: "GPT-5.4", providerID: "openai", modelID: "gpt-5.4"),
@@ -678,6 +678,15 @@ final class AppState {
         selectedModelIDBySessionID[sessionID] = modelPresets[index].id
         persistSelectedModelMap()
     }
+
+    private func canonicalModelPresetID(for savedID: String) -> String {
+        switch savedID {
+        case "zai-coding-plan/glm-5.1":
+            return "zai-coding-plan/glm-5-turbo"
+        default:
+            return savedID
+        }
+    }
     
     func setSelectedAgentIndex(_ index: Int) {
         let visibleAgents = agents.filter { $0.isVisible }
@@ -688,7 +697,12 @@ final class AppState {
     private func applySavedModelForCurrentSession() {
         guard let sessionID = currentSessionID else { return }
         guard let saved = selectedModelIDBySessionID[sessionID] else { return }
-        guard let idx = modelPresets.firstIndex(where: { $0.id == saved }) else { return }
+        let canonicalSaved = canonicalModelPresetID(for: saved)
+        if canonicalSaved != saved {
+            selectedModelIDBySessionID[sessionID] = canonicalSaved
+            persistSelectedModelMap()
+        }
+        guard let idx = modelPresets.firstIndex(where: { $0.id == canonicalSaved }) else { return }
         selectedModelIndex = idx
     }
 
@@ -696,7 +710,8 @@ final class AppState {
         guard let sessionID = currentSessionID else { return }
 
         guard let info = messages.reversed().compactMap({ $0.info.resolvedModel }).first else { return }
-        guard let idx = modelPresets.firstIndex(where: { $0.providerID == info.providerID && $0.modelID == info.modelID }) else {
+        let canonicalModelID = canonicalModelPresetID(for: "\(info.providerID)/\(info.modelID)")
+        guard let idx = modelPresets.firstIndex(where: { $0.id == canonicalModelID }) else {
             Self.logger.warning("syncModelFromMessageHistory: model \(info.providerID, privacy: .public)/\(info.modelID, privacy: .public) not in presets, keeping current selection")
             return
         }

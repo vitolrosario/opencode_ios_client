@@ -1541,6 +1541,45 @@ struct ModelPresetShortNameTests {
     }
 }
 
+struct ModelSelectionPersistenceTests {
+    @Test @MainActor func legacyGLM51SelectionMapsToCurrentTurboPreset() {
+        let sessionID = "session-glm"
+        let defaultsKey = "selectedModelBySession"
+        let legacySelection = [sessionID: "zai-coding-plan/glm-5.1"]
+        let originalData = UserDefaults.standard.data(forKey: defaultsKey)
+
+        defer {
+            if let originalData {
+                UserDefaults.standard.set(originalData, forKey: defaultsKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: defaultsKey)
+            }
+        }
+
+        let encoded = try! JSONEncoder().encode(legacySelection)
+        UserDefaults.standard.set(encoded, forKey: defaultsKey)
+
+        let state = AppState()
+        let session = Session(
+            id: sessionID,
+            slug: sessionID,
+            projectID: "p1",
+            directory: "/tmp",
+            parentID: nil,
+            title: sessionID,
+            version: "1",
+            time: .init(created: 0, updated: 100, archived: nil),
+            share: nil,
+            summary: nil
+        )
+
+        state.selectSession(session)
+
+        #expect(state.selectedModelIndex == 0)
+        #expect(state.modelPresets[state.selectedModelIndex].displayName == "GLM-5-turbo")
+    }
+}
+
 struct ArchivedSessionTests {
     @Test func sessionDecodingWithArchived() throws {
         let json = """
