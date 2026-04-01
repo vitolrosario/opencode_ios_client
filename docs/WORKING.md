@@ -4,16 +4,31 @@
 
 ## 当前状态
 
-- **最后更新**：2026-03-28
-- **Phase**：Phase 3 完成 + iPad session duplicate fix
-- **编译**：✅ 通过（iphonesimulator / generic destination）
-- **测试**：✅ `xcodebuild build` 与完整 `xcodebuild test`（含现有 UI smoke）通过
+- **最后更新**：2026-04-01
+- **分支**：`design-redesign`（from master）
+- **编译**：✅ 通过
+- **测试**：✅ 所有 unit tests + UI tests 通过
+- **Phase**：视觉重设计 — 核心改动已完成，待用户测试
 
 ## 进行中
 
-（无）
+- [ ] **视觉重设计用户测试** — 核心改动已全部实现并提交（`b6ed2ac`），等待用户真机/模拟器体验反馈
 
 ## 已完成（近期）
+
+- [x] **视觉重设计 Phase 1（2026-04-01）**：
+  - [x] `docs/design.md` — 11 个改进方向的完整设计文档
+  - [x] `DesignTokens.swift` — 集中设计系统（Brand 主色深蓝+金黄、语义色、暖灰中性色、七档排版、间距、圆角、动画预设、阴影）
+  - [x] 17 个视图文件重设计：MessageRowView、ChatTabView、ChatToolbarView、ToolPartView、PatchPartView、PermissionCardView、QuestionCardView、SessionListView、ContextUsageView、StreamingReasoningView、TodoListInlineView、FileTreeView、FileContentView、SettingsTabView、SplitSidebarView、ContentView、L10n
+  - [x] 消息方向 B（无气泡 + 4pt 左侧色条），AI 消息纯文字无容器
+  - [x] Composer 重设计（mic 内嵌左侧、send/stop 右侧方形按钮、输入框无描边）
+  - [x] Toolbar model+agent 合并为配置 sheet，Rename 降为 .secondary
+  - [x] 卡片语言统一：信息卡片去描边、操作卡片左侧色条
+  - [x] Context ring 缩小 18pt + ≥85% 脉冲动画
+  - [x] 所有新增 L10n key（configureTitle/Model/Agent/NoAgents）含中英翻译
+  - [x] Gemini subagent 误操作修复（PathNormalizer、APIConstants/StorageKeys 恢复、hardcoded strings）
+  - **Commit**: `b6ed2ac` — feat: redesign visual design system — design tokens, card language, composer, toolbar
+  - **尚未实现的进阶项**（P1: session 摘要预览、子 session 连接线、session 切换淡入淡出、permission 滑入动画、消息出现动画；P2: tool 卡片 spring 展开、Logo 空状态呼吸动画、深色 Logo 资源）
 
 - [x] **避免 session 切换时在 view update 内同步改状态（2026-03-30）**：
   - [x] 将 `ChatTabView` 中响应 `currentSessionID` 变化的草稿同步与滚动状态重置改为 `Task { @MainActor in }`
