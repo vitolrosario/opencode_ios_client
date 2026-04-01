@@ -15,11 +15,11 @@ import UIKit
 
 enum DesignColors {
 
-    // MARK: Brand (extracted from logo: deep blue bracket + gold bracket)
+    // MARK: Brand
 
     enum Brand {
-        /// Deep blue — primary actions, selected states, links
-        static let primary = Color(red: 0.15, green: 0.25, blue: 0.55)
+        /// Primary brand blue — close to system accent, used for all interactive elements
+        static let primary = Color(red: 0.0, green: 0.478, blue: 1.0)
         /// Gold accent — highlights, running indicators
         static let gold = Color(red: 0.85, green: 0.65, blue: 0.13)
     }

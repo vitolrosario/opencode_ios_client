@@ -66,7 +66,7 @@ struct SessionListView: View {
                             Image(systemName: "plus.circle.fill")
                         }
                         .disabled(!state.canCreateSession)
-                        .foregroundColor(state.canCreateSession ? .accentColor : .gray)
+                        .foregroundColor(state.canCreateSession ? DesignColors.Brand.primary : .gray)
 
                         if !state.canCreateSession {
                             Button {

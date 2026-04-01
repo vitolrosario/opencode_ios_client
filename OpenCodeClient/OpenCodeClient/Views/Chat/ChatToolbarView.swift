@@ -44,7 +44,7 @@ struct ChatToolbarView: View {
                 Image(systemName: "list.bullet.circle.fill")
                     .font(.title3)
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(DesignColors.Brand.primary)
             }
             .accessibilityIdentifier("chat-toolbar-session-list")
             
@@ -64,7 +64,7 @@ struct ChatToolbarView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.title3)
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundColor(state.canCreateSession ? .accentColor : .gray)
+                    .foregroundColor(state.canCreateSession ? DesignColors.Brand.primary : .gray)
             }
             .disabled(!state.canCreateSession)
             .accessibilityIdentifier("chat-toolbar-create-session")
@@ -132,7 +132,7 @@ struct ChatToolbarView: View {
                                     Spacer()
                                     if state.selectedModelIndex == index {
                                         Image(systemName: "checkmark")
-                                            .foregroundColor(.accentColor)
+                                            .foregroundColor(DesignColors.Brand.primary)
                                     }
                                 }
                             }
@@ -168,7 +168,7 @@ struct ChatToolbarView: View {
                                         Spacer()
                                         if state.selectedAgentIndex == index {
                                             Image(systemName: "checkmark")
-                                                .foregroundColor(.accentColor)
+                                                .foregroundColor(DesignColors.Brand.primary)
                                         }
                                     }
                                 }

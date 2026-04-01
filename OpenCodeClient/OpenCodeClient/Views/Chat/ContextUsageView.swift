@@ -90,7 +90,7 @@ struct ContextUsageButton: View {
         guard let p = progress else { return .secondary.opacity(0.55) }
         if p >= 0.9 { return .red }
         if p >= 0.7 { return .orange }
-        return .accentColor
+        return DesignColors.Brand.primary
     }
 
     private var ringSize: CGFloat { 18 }

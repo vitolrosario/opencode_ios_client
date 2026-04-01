@@ -37,7 +37,7 @@ struct ToolPartView: View {
 
     private var toolAccentColor: Color {
         if part.tool == "todowrite" { return .green }
-        return .accentColor
+        return DesignColors.Brand.primary
     }
 
     private var toolBackgroundColor: Color {
