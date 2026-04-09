@@ -66,13 +66,33 @@ private struct WorkspaceMarkdownImageView: View {
 
     @State private var imageData: Data?
     @State private var didAttemptLoad = false
+    @State private var showImageSheet = false
+
+    private var decodedUIImage: UIImage? {
+        imageData.flatMap(UIImage.init(data:))
+    }
+
+    private var imageDisplayName: String {
+        if let path = WorkspaceMarkdownImageProvider.workspaceRelativePath(from: url) {
+            return URL(fileURLWithPath: path).lastPathComponent
+        }
+        if let url {
+            return url.lastPathComponent.isEmpty ? "Image" : url.lastPathComponent
+        }
+        return "Image"
+    }
 
     var body: some View {
         Group {
-            if let imageData, let uiImage = UIImage(data: imageData) {
+            if let uiImage = decodedUIImage {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        print("[WorkspaceMarkdownImageProvider] tapped image name=\(imageDisplayName)")
+                        showImageSheet = true
+                    }
             } else if let url, let scheme = url.scheme, scheme == "http" || scheme == "https" {
                 NetworkImage(url: url) { state in
                     switch state {
@@ -84,6 +104,30 @@ private struct WorkspaceMarkdownImageView: View {
                 }
             } else {
                 Color.clear.frame(width: 0, height: 0)
+            }
+        }
+        .sheet(isPresented: $showImageSheet) {
+            if let uiImage = decodedUIImage {
+                NavigationStack {
+                    ImageView(uiImage: uiImage)
+                        .navigationTitle(imageDisplayName)
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .primaryAction) {
+                                ShareLink(
+                                    item: Image(uiImage: uiImage),
+                                    preview: SharePreview(imageDisplayName, image: Image(uiImage: uiImage))
+                                ) {
+                                    Image(systemName: "square.and.arrow.up")
+                                }
+                            }
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") {
+                                    showImageSheet = false
+                                }
+                            }
+                        }
+                }
             }
         }
         .task(id: url?.absoluteString) {
