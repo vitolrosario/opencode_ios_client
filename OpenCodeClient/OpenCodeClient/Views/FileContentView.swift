@@ -108,7 +108,12 @@ struct FileContentView: View {
         let useRaw = isMarkdown ? useRawTextForMarkdown(text) : false
         if isMarkdown {
             if showPreview && !useRaw {
-                MarkdownPreviewView(text: text, state: state, markdownFilePath: filePath)
+                MarkdownPreviewView(
+                    text: text,
+                    state: state,
+                    markdownFilePath: filePath,
+                    workspaceDirectory: state.currentSession?.directory
+                )
             } else {
                 RawTextView(text: text, monospaced: !showPreview)
             }
@@ -204,6 +209,7 @@ struct MarkdownPreviewView: View {
     let text: String
     let state: AppState
     let markdownFilePath: String?
+    let workspaceDirectory: String?
 
     private static let maxLineLength = 1500
     private static let maxTotalLength = 60_000
@@ -229,7 +235,8 @@ struct MarkdownPreviewView: View {
                     )
                         .markdownImageProvider(
                             WorkspaceMarkdownImageProvider(
-                                loadFileContent: { path in try await state.loadFileContent(path: path) }
+                                loadFileContent: { path in try await state.loadFileContent(path: path) },
+                                workspaceDirectory: workspaceDirectory
                             )
                         )
                         .textSelection(.enabled)

@@ -5,9 +5,10 @@ import SwiftUI
 
 struct WorkspaceMarkdownImageProvider: ImageProvider {
     let loadFileContent: @Sendable (String) async throws -> FileContent
+    let workspaceDirectory: String?
 
     func makeImage(url: URL?) -> some View {
-        WorkspaceMarkdownImageView(url: url, loadFileContent: loadFileContent)
+        WorkspaceMarkdownImageView(url: url, loadFileContent: loadFileContent, workspaceDirectory: workspaceDirectory)
     }
 
     static func imageBaseURL(markdownFilePath: String?) -> URL? {
@@ -23,15 +24,15 @@ struct WorkspaceMarkdownImageProvider: ImageProvider {
         return components.url
     }
 
-    static func workspaceRelativePath(from url: URL?) -> String? {
+    static func workspaceRelativePath(from url: URL?, workspaceDirectory: String? = nil) -> String? {
         guard let url else { return nil }
         if url.scheme == "opencode-workspace" {
             let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            let normalized = PathNormalizer.normalize(path)
+            let normalized = PathNormalizer.resolveWorkspaceRelativePath(path, workspaceDirectory: workspaceDirectory)
             return normalized.isEmpty ? nil : normalized
         }
         if url.scheme == nil {
-            let normalized = PathNormalizer.normalize(url.absoluteString)
+            let normalized = PathNormalizer.resolveWorkspaceRelativePath(url.absoluteString, workspaceDirectory: workspaceDirectory)
             return normalized.isEmpty ? nil : normalized
         }
         return nil
@@ -63,6 +64,7 @@ struct WorkspaceMarkdownImageProvider: ImageProvider {
 private struct WorkspaceMarkdownImageView: View {
     let url: URL?
     let loadFileContent: @Sendable (String) async throws -> FileContent
+    let workspaceDirectory: String?
 
     @State private var imageData: Data?
     @State private var didAttemptLoad = false
@@ -73,7 +75,7 @@ private struct WorkspaceMarkdownImageView: View {
     }
 
     private var imageDisplayName: String {
-        if let path = WorkspaceMarkdownImageProvider.workspaceRelativePath(from: url) {
+        if let path = WorkspaceMarkdownImageProvider.workspaceRelativePath(from: url, workspaceDirectory: workspaceDirectory) {
             return URL(fileURLWithPath: path).lastPathComponent
         }
         if let url {
@@ -139,7 +141,7 @@ private struct WorkspaceMarkdownImageView: View {
                 return
             }
 
-            guard let path = WorkspaceMarkdownImageProvider.workspaceRelativePath(from: url) else {
+            guard let path = WorkspaceMarkdownImageProvider.workspaceRelativePath(from: url, workspaceDirectory: workspaceDirectory) else {
                 if let url {
                     print("[WorkspaceMarkdownImageProvider] unsupported image url=\(url.absoluteString)")
                 }

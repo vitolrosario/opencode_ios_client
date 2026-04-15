@@ -89,6 +89,12 @@ struct MessageRowView: View {
         
         var body: some View {
             Markdown(resolvedText ?? text)
+                .markdownImageProvider(
+                    WorkspaceMarkdownImageProvider(
+                        loadFileContent: { path in try await state.loadFileContent(path: path) },
+                        workspaceDirectory: workspaceDirectory
+                    )
+                )
                 .task {
                     resolvedText = await MarkdownImageResolver.resolveImages(
                         in: text,
