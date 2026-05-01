@@ -415,12 +415,12 @@ final class AppState {
     var streamingReasoningPart: Part? { get { messageStore.streamingReasoningPart } set { messageStore.streamingReasoningPart = newValue } }
 
     var modelPresets: [ModelPreset] = [
-        ModelPreset(displayName: "GLM-5-turbo", providerID: "zai-coding-plan", modelID: "glm-5-turbo"),
-        ModelPreset(displayName: "GPT-5.5", providerID: "openai", modelID: "gpt-5.5"),
-        ModelPreset(displayName: "GPT-5.3 Codex", providerID: "openai", modelID: "gpt-5.3-codex"),
-        ModelPreset(displayName: "DeepSeek", providerID: "deepseek", modelID: "deepseek-v4-pro"),
+        ModelPreset(displayName: "MiniMax M2.5 (Zen)", providerID: "opencode", modelID: "minimax-m2.5-free"),
+        ModelPreset(displayName: "MiniMax M2.5 (OpenRouter)", providerID: "openrouter", modelID: "minimax/minimax-m2.5:free"),
+        ModelPreset(displayName: "GPT-OSS 120B", providerID: "openrouter", modelID: "gpt-oss-120b:free"),
+        ModelPreset(displayName: "Nemotron 120B", providerID: "openrouter", modelID: "nemotron-3-super-120b-a12b:free"),
     ]
-    var selectedModelIndex: Int = 1
+    var selectedModelIndex: Int = 0
     
     var agents: [AgentInfo] = [
         AgentInfo(name: "OpenCode-Builder", description: "Build agent (OpenCode default)", mode: "all", hidden: false, native: false),
